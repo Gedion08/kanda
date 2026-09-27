@@ -1,0 +1,23 @@
+{
+  "name": "@kanda/business",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Business web app: payments, beneficiaries, team, holdings. L5 s3.",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@kanda/shared": "workspace:*",
+    "@kanda/ui": "workspace:*",
+    "@kanda/api-client": "workspace:*",
+    "@kanda/chain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

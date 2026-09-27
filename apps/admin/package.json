@@ -1,0 +1,23 @@
+{
+  "name": "@kanda/admin",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Admin console: corridors, partners, intents, cases, recon, Safe proposals, audit log. L5 s7.",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@kanda/shared": "workspace:*",
+    "@kanda/ui": "workspace:*",
+    "@kanda/api-client": "workspace:*",
+    "@kanda/chain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

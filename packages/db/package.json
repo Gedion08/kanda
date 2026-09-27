@@ -1,0 +1,23 @@
+{
+  "name": "@kanda/db",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Drizzle schema, migrations, ledger balance trigger, append-only grants. L3 s4, L4 s12.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@kanda/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

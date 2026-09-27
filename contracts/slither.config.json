@@ -1,0 +1,5 @@
+{
+  "filter_paths": "(dependencies/|test/|script/)",
+  "exclude_informational": false,
+  "fail_on": "high"
+}

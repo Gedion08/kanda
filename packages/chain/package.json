@@ -1,0 +1,23 @@
+{
+  "name": "@kanda/chain",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ABIs, deployment addresses, viem clients, tx submitter. L3 s11, L5 s2.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@kanda/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

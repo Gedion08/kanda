@@ -1,0 +1,70 @@
+# Source of truth for the Partner API (L6 section 1). CI will fail on route drift (L6 task 2).
+# Paths are added in T1.14 from L6 section 3; this file only fixes the conventions.
+openapi: 3.1.0
+info:
+  title: Kanda Partner API
+  version: 0.0.0
+  description: >-
+    REST API for ramp partners, integrators and businesses. JSON only; amounts are decimal strings
+    with the currency beside them; errors are RFC 9457 problem+json with a stable code (L6 section 7).
+servers:
+  - url: https://sandbox.kanda.example/v1
+    description: Sandbox (placeholder domain)
+  - url: https://api.kanda.example/v1
+    description: Production (placeholder domain)
+security:
+  - kandaKey: []
+    kandaTimestamp: []
+    kandaSignature: []
+paths: {}
+components:
+  securitySchemes:
+    kandaKey:
+      type: apiKey
+      in: header
+      name: X-Kanda-Key
+      description: API key id.
+    kandaTimestamp:
+      type: apiKey
+      in: header
+      name: X-Kanda-Timestamp
+      description: Unix seconds; rejected if more than 300 s from server time.
+    kandaSignature:
+      type: apiKey
+      in: header
+      name: X-Kanda-Signature
+      description: >-
+        hex(HMAC-SHA256(secret, timestamp + "\n" + METHOD + "\n" + path with query + "\n" + sha256hex(body))).
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Required on every POST (L3 section 3). UUID recommended.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+  schemas:
+    Problem:
+      type: object
+      description: RFC 9457 problem details with a stable code.
+      required: [type, title, status, code]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        code:
+          type: string
+          enum:
+            - quote_expired
+            - quote_held
+            - corridor_closed
+            - limit_exceeded
+            - compliance_hold
+            - invalid_state
+            - signature_invalid
+            - idempotency_conflict
+            - partner_timeout

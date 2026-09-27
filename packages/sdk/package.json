@@ -1,0 +1,23 @@
+{
+  "name": "@kanda/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Published @kanda/sdk: request signing, webhook verification, lock building. L6 s8. Must stay free of internal-only deps (bundle @kanda/shared at build).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@kanda/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

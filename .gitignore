@@ -1,0 +1,30 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.turbo/
+*.tsbuildinfo
+**/generated/
+.ponder/
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/dependencies/
+contracts/broadcast/*/31337/
+contracts/broadcast/**/dry-run/
+lcov.info
+
+# Secrets: never commit (AGENTS.md)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

@@ -1,0 +1,47 @@
+# Profile values from Build Playbook section 2; additions are marked.
+[profile.default]
+src = 'src'
+test = 'test'
+script = 'script'
+solc_version = '0.8.28'
+evm_version = 'cancun'
+optimizer = true
+optimizer_runs = 10000
+# Additions: Soldeer-managed dependencies, storage layout output for upgrade checks (L1 section 6),
+# and file access for Deploy.s.sol (reads config/, writes deployments/, L1 section 7).
+libs = ['dependencies']
+extra_output = ['storageLayout']
+fs_permissions = [
+  { access = 'read', path = './config' },
+  { access = 'read-write', path = './deployments' },
+]
+
+[fuzz]
+runs = 10000
+
+[invariant]
+runs = 256
+depth = 100
+fail_on_revert = false
+
+[profile.ci.invariant]
+runs = 10000
+
+# Addition: formatter settings so `forge fmt --check` is deterministic in CI.
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = 'long'
+quote_style = 'double'
+number_underscore = 'thousands'
+
+# Addition: Solidity dependencies, pinned exactly (installed with `forge soldeer install`).
+[dependencies]
+forge-std = '1.16.2'
+'@openzeppelin-contracts' = '5.6.1'
+'@openzeppelin-contracts-upgradeable' = '5.6.1'
+
+[soldeer]
+remappings_generate = false
+remappings_regenerate = false
