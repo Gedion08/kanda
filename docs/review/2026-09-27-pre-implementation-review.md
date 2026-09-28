@@ -282,6 +282,15 @@ Also:
 - State the rules the tests pin down. `blockAccount(address(0))` reverts `ZeroAddress`, because blocking zero would stop every mint and burn. `initialize(address admin)` grants only `DEFAULT_ADMIN_ROLE` and reverts `ZeroAddress` on zero. The name is `Kanda` (also the EIP-712 domain name, version `1`), the symbol `KND`. `approve` and `permit` still work while paused or blocked; only balance moves stop.
 - Open for P2: Chainlink's `IBurnMintERC20` also declares `burn(address account, uint256 amount)`, which is not in `IKandaToken`. `BurnMintTokenPool` only calls `burn(uint256)`, so P1 is unaffected. Decide before the CCIP pool is chosen whether to add it or to use that pool type only.
 
+**SCP-12: BasketVault details** (L1 section 3.3). Found while implementing T0.4 on 28 Sep 2026. Proposed; the code follows it.
+
+- `initialize(admin, knd, registry, legs, supplyCap, feeBps, feeRecipient)`. It sets the genesis basket, the cap and the fee from the network config in one step and emits `BasketVersionSet(1, legs)`, `SupplyCapSet` and `FeeSet`. The deployer then needs no temporary LIMITS_ADMIN_ROLE. It grants only DEFAULT_ADMIN_ROLE and reverts `ZeroAddress` for a zero admin, token, registry or fee recipient.
+- `coverage()` returns `type(uint256).max` per leg while supply is zero (C-11). The redeem fee rounds up, like the create fee (C-14).
+- Step 1 reuses the other contracts' errors instead of adding new ones: a blocked `to` on create reverts `IKandaToken.AccountBlocked(to)`, and a caller who is not an active participant reverts `IParticipantRegistry.NotActive(caller)`.
+- `setFee` rejects a zero recipient even when `feeBps` is 0. `pauseCreate` and `unpauseCreate` are idempotent: they don't revert when already in that state, and they emit each time.
+- Redeem computes every leg's payout and checks all minimums before it moves any token. A leg whose payout rounds to zero is skipped, because some tokens revert on zero transfers. The end state matches the spec's step order.
+- `BasketNotBacked` stays in the interface but is unused in P1; it is reserved for `setBasket` (P3, ADR-012).
+
 ## 5. Implementation strategy
 
 **Order.** Follow the phase task packs strictly:
