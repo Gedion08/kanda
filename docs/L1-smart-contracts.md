@@ -50,9 +50,16 @@ interface IKandaToken {
     event Blocked(address indexed account);
     event Unblocked(address indexed account);
     event Rescued(address indexed token, address indexed to, uint256 amount);
+    event AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce);     // EIP-3009
+    event AuthorizationCanceled(address indexed authorizer, bytes32 indexed nonce); // EIP-3009
     error AccountBlocked(address account);
     error CannotRescueKnd();
     error ZeroAddress();
+    error AuthorizationNotYetValid();
+    error AuthorizationExpired();
+    error AuthorizationUsedOrCanceled(address authorizer, bytes32 nonce);
+    error InvalidSignature();
+    error CallerMustBePayee(address caller, address payee);
 
     // MINTER_ROLE only, whenNotPaused
     function mint(address to, uint256 amount) external;
@@ -81,7 +88,10 @@ interface IKandaToken {
 
 Rules:
 
-- Override \_update: revert if paused; revert AccountBlocked if from or to is blocked (mint to a blocked address also reverts).
+- initialize(address admin) grants only DEFAULT\_ADMIN\_ROLE (WireRoles grants the rest) and reverts ZeroAddress for a zero admin. Name `Kanda`, symbol `KND`; the EIP-712 domain is name `Kanda`, version `1`.
+- Override \_update: revert if paused; revert AccountBlocked if from or to is blocked (mint to a blocked address also reverts). transferFrom also reverts AccountBlocked if the spender is blocked. approve and permit still work while paused or blocked; only balance moves stop.
+- blockAccount(address(0)) reverts ZeroAddress, because blocking zero would stop every mint and burn.
+- EIP-3009: an authorization is valid while validAfter < block.timestamp < validBefore. receiveWithAuthorization reverts CallerMustBePayee unless msg.sender is `to`. A nonce is spent by use or by cancelAuthorization, and either way it can never be used again. Signatures are checked against the EIP-712 domain, so a signature made for another chain fails with InvalidSignature.
 - No seize function in P1. Frozen funds stay frozen until unblocked by the Compliance Safe on legal instruction.
 - rescueERC20(token, to, amount) for tokens sent by mistake, DEFAULT\_ADMIN\_ROLE only; reverts CannotRescueKnd for KND and ZeroAddress for a zero recipient.
 - Tests: every role check, blocked sender, blocked receiver, blocked spender on transferFrom, pause on every path, permit and 3009 replay protection, cancelled authorization.
@@ -265,7 +275,7 @@ Settles EIP-712 quotes signed by registered market makers: maker, taker, tokenIn
 
 ### 3.9 Cross-chain with CCIP (P2)
 
-Base is the home chain and uses a LockRelease token pool, so Base totalSupply always equals global supply and INV-1 stays exact. Celo and Avalanche use BurnMint pools with the same KandaToken code, where only the pool holds MINTER\_ROLE. Rate limits per lane (capacity and refill rate) are set by the timelock. Reconciliation: Base pool locked balance equals the sum of remote supplies plus in-flight messages.
+Base is the home chain and uses a LockRelease token pool, so Base totalSupply always equals global supply and INV-1 stays exact. Celo and Avalanche use BurnMint pools with the same KandaToken code, where only the pool holds MINTER\_ROLE. Use Chainlink's `BurnMintTokenPool`, which burns its own balance with `burn(uint256)`. KandaToken has no `burn(address,uint256)`, so pool variants that call it (`BurnWithFromMintTokenPool`) are not supported; check this against the CCIP release chosen in P2 (SCP-11). Rate limits per lane (capacity and refill rate) are set by the timelock. Reconciliation: Base pool locked balance equals the sum of remote supplies plus in-flight messages.
 
 ### 3.10 CashDesk (P2)
 

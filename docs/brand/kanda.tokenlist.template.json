@@ -1,0 +1,33 @@
+{
+  "name": "Kanda",
+  "timestamp": "<ISO 8601 publish time>",
+  "version": { "major": 1, "minor": 0, "patch": 0 },
+  "logoURI": "<public URL of knd-256.png>",
+  "keywords": ["kanda", "knd", "settlement", "africa"],
+  "tags": {
+    "knd": {
+      "name": "Kanda",
+      "description": "Reserve-backed settlement unit for African trade: 0.70 USD plus fixed gold per KND, on Base."
+    }
+  },
+  "tokens": [
+    {
+      "chainId": 8453,
+      "address": "<KandaToken proxy address on Base>",
+      "name": "Kanda",
+      "symbol": "KND",
+      "decimals": 18,
+      "logoURI": "<public URL of knd-256.png>",
+      "tags": ["knd"]
+    },
+    {
+      "chainId": 84532,
+      "address": "<KandaToken proxy address on Base Sepolia>",
+      "name": "Kanda",
+      "symbol": "KND",
+      "decimals": 18,
+      "logoURI": "<public URL of knd-256.png>",
+      "tags": ["knd"]
+    }
+  ]
+}
