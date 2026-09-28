@@ -275,6 +275,13 @@ Also:
 
 **SCP-10: finality consumption** (L3 sections 4 and 6). Remove `onchain_events.finalized` and add `consumed_chain_events(chain_id, tx_hash, log_index, intent_id, consumed_at)`. Finality is computed at read time against the safe or finalized head.
 
+**SCP-11: KandaToken EIP-3009 surface and details** (L1 section 3.1). Found while implementing T0.2 on 28 Sep 2026. Approved and applied on 28 Sep 2026 (section 8).
+
+- Add the EIP-3009 events the standard requires: `AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce)` and `AuthorizationCanceled(address indexed authorizer, bytes32 indexed nonce)`.
+- Add errors: `AuthorizationNotYetValid()`, `AuthorizationExpired()`, `AuthorizationUsedOrCanceled(address authorizer, bytes32 nonce)`, `InvalidSignature()`, `CallerMustBePayee(address caller, address payee)`.
+- State the rules the tests pin down. `blockAccount(address(0))` reverts `ZeroAddress`, because blocking zero would stop every mint and burn. `initialize(address admin)` grants only `DEFAULT_ADMIN_ROLE` and reverts `ZeroAddress` on zero. The name is `Kanda` (also the EIP-712 domain name, version `1`), the symbol `KND`. `approve` and `permit` still work while paused or blocked; only balance moves stop.
+- Open for P2: Chainlink's `IBurnMintERC20` also declares `burn(address account, uint256 amount)`, which is not in `IKandaToken`. `BurnMintTokenPool` only calls `burn(uint256)`, so P1 is unaffected. Decide before the CCIP pool is chosen whether to add it or to use that pool type only.
+
 ## 5. Implementation strategy
 
 **Order.** Follow the phase task packs strictly:
@@ -380,4 +387,11 @@ Findings from verifying ADR-010 on-chain, all on Base mainnet on 27 Sep 2026:
 | G-06 | L | **No permit.** DGLD has no EIP-2612 permit. | ADD section 5 updated: participants approve DGLD before createInKind. |
 
 Still open: SCP-04 to SCP-08 and SCP-10. None of them blocks P0.
+
+### 28 Sep 2026
+
+Decisions:
+
+- SCP-11 was approved and applied to the spec: L1 section 3.1 (the EIP-3009 events and errors, and the initialize, blocklist, spender and signature rules) and L1 section 3.9 (remote chains use `BurnMintTokenPool`, so no `burn(address,uint256)` is added).
+- T0.2 KandaToken implemented against it.
 
