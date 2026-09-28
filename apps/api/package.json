@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Hono modular monolith: gateway, quotes, payments, ledger, treasury, compliance, webhooks, admin; BullMQ workers. L3.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "lint": "eslint .",

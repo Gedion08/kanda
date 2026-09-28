@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Admin console: corridors, partners, intents, cases, recon, Safe proposals, audit log. L5 s7.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "lint": "eslint .",

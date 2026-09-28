@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Business web app: payments, beneficiaries, team, holdings. L5 s3.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "lint": "eslint .",

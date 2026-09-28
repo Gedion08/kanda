@@ -49,7 +49,10 @@ ERC-20 with permit (EIP-2612), transferWithAuthorization (EIP-3009), blocklist, 
 interface IKandaToken {
     event Blocked(address indexed account);
     event Unblocked(address indexed account);
+    event Rescued(address indexed token, address indexed to, uint256 amount);
     error AccountBlocked(address account);
+    error CannotRescueKnd();
+    error ZeroAddress();
 
     // MINTER_ROLE only, whenNotPaused
     function mint(address to, uint256 amount) external;
@@ -60,6 +63,9 @@ interface IKandaToken {
     function blockAccount(address account) external;
     function unblockAccount(address account) external;
     function isBlocked(address account) external view returns (bool);
+
+    // DEFAULT_ADMIN_ROLE
+    function rescueERC20(address token, address to, uint256 amount) external;
 
     // PAUSER_ROLE / UNPAUSER_ROLE
     function pause() external;
@@ -77,7 +83,7 @@ Rules:
 
 - Override \_update: revert if paused; revert AccountBlocked if from or to is blocked (mint to a blocked address also reverts).
 - No seize function in P1. Frozen funds stay frozen until unblocked by the Compliance Safe on legal instruction.
-- rescueERC20(token, to, amount) for tokens sent by mistake, DEFAULT\_ADMIN\_ROLE only; cannot rescue KND.
+- rescueERC20(token, to, amount) for tokens sent by mistake, DEFAULT\_ADMIN\_ROLE only; reverts CannotRescueKnd for KND and ZeroAddress for a zero recipient.
 - Tests: every role check, blocked sender, blocked receiver, blocked spender on transferFrom, pause on every path, permit and 3009 replay protection, cancelled authorization.
 
 ### 3.2 ParticipantRegistry
@@ -94,11 +100,13 @@ interface IParticipantRegistry {
     event TierSet(uint8 indexed tier, uint128 dailyCreate, uint128 dailyRedeem);
     error NotActive(address account);
     error LimitExceeded(address account, uint256 requested, uint256 remaining);
+    error UnknownTier(uint8 tier);
+    error ZeroAddress();
 
-    function setAccount(address account, Kind kind, uint8 tier, bool active) external; // PARTICIPANT_MANAGER_ROLE, tier must exist
+    function setAccount(address account, Kind kind, uint8 tier, bool active) external; // PARTICIPANT_MANAGER_ROLE, tier must exist (UnknownTier), account non-zero
     function setTier(uint8 tier, TierLimits calldata limits) external;                 // LIMITS_ADMIN_ROLE (timelock)
-    function consumeCreate(address account, uint256 amount) external;                  // only BasketVault or CashDesk
-    function consumeRedeem(address account, uint256 amount) external;                  // only BasketVault
+    function consumeCreate(address account, uint256 amount) external;                  // LIMITS_CONSUMER_ROLE: BasketVault (CashDesk in P2)
+    function consumeRedeem(address account, uint256 amount) external;                  // LIMITS_CONSUMER_ROLE: BasketVault
     function isParticipant(address account) external view returns (bool);
     function isPartner(address account) external view returns (bool);
     function remaining(address account) external view returns (uint256 create, uint256 redeem);
@@ -106,6 +114,8 @@ interface IParticipantRegistry {
 ```
 
 Day index is block.timestamp / 1 days (UTC). Counters reset lazily when the stored day differs from today.
+
+A tier exists once setTier has been called for it. Consumers are authorized by LIMITS\_CONSUMER\_ROLE, granted by WireRoles, because the registry is deployed before the vault (section 7).
 
 ### 3.3 BasketVault
 
@@ -120,11 +130,19 @@ interface IBasketVault {
     event BasketVersionSet(uint32 indexed version, Leg[] legs);
     event SupplyCapSet(uint256 cap);
     event FeeSet(uint16 feeBps, address recipient);
+    event CreatePaused(address account);
+    event CreateUnpaused(address account);
 
     error SupplyCapExceeded(uint256 newSupply, uint256 cap);
     error SlippageOut(uint256 leg, uint256 amount, uint256 min);
     error MintBelowMin(uint256 minted, uint256 minOut);
     error BasketNotBacked(uint256 leg);
+    error CreationPaused();
+    error FeeTooHigh(uint16 feeBps);
+    error ZeroAmount();
+    error ZeroAddress();
+    error LengthMismatch(uint256 expected, uint256 actual);
+    error InvalidBasket();
 
     function createInKind(uint256 kndAmount, uint256 minKndOut, address to) external returns (uint256 kndOut);
     function redeemInKind(uint256 kndAmount, uint256[] calldata minAmountsOut, address to) external returns (uint256[] memory amountsOut);
@@ -132,16 +150,21 @@ interface IBasketVault {
     function previewRedeem(uint256 kndAmount) external view returns (uint256[] memory amountsOut);
     function legs() external view returns (uint32 version, Leg[] memory);
     function coverage() external view returns (uint256[] memory ratiosBps); // per leg, 10000 = 100%
+    function createPaused() external view returns (bool);
 
     function setSupplyCap(uint256 cap) external;                 // LIMITS_ADMIN_ROLE
-    function setFee(uint16 feeBps, address recipient) external;  // LIMITS_ADMIN_ROLE, feeBps <= 100
-    function setBasket(uint32 version, Leg[] calldata legs) external; // LIMITS_ADMIN_ROLE, P3 reconstitution
+    function setFee(uint16 feeBps, address recipient) external;  // LIMITS_ADMIN_ROLE, feeBps <= 100 (FeeTooHigh)
+    function pause() external;          // PAUSER_ROLE: stops create and redeem
+    function unpause() external;        // UNPAUSER_ROLE
+    function pauseCreate() external;    // PAUSER_ROLE: stops create only; redeem continues
+    function unpauseCreate() external;  // UNPAUSER_ROLE
+    // setBasket(uint32 version, Leg[] legs): deferred to P3 (ADR-012, task T3.2)
 }
 ```
 
 createInKind, in order:
 
-1. Require not paused, caller is an active participant, to is not blocked.
+1. Require the vault not paused and creation not paused (CreationPaused); kndAmount non-zero (ZeroAmount); to non-zero (ZeroAddress) and not blocked; caller is an active participant.
 2. For each leg compute required = mulDiv(kndAmount, qtyPerUnit, 1e18, Ceil); pull it with safeTransferFrom; record received as the balance delta.
 3. kndGross = minimum over legs of mulDiv(received, 1e18, qtyPerUnit, Floor), capped at kndAmount. This handles fee-on-transfer gold tokens: the scarcest leg decides; any excess stays as surplus backing.
 4. Check totalSupply + kndGross against the supply cap; call registry.consumeCreate.
@@ -149,11 +172,13 @@ createInKind, in order:
 
 redeemInKind, in order:
 
-1. Require not paused, caller is an active participant; call registry.consumeRedeem.
+1. Require the vault not paused (a creation pause does not apply); kndAmount non-zero; to non-zero; minAmountsOut has one entry per leg (LengthMismatch); caller is an active participant; call registry.consumeRedeem.
 2. Pull kndAmount from caller; fee in KND goes to fee recipient; burn the rest (net).
 3. For each leg pay mulDiv(net, qtyPerUnit, 1e18, Floor); check against minAmountsOut; transfer to to.
 
-setBasket must check every new leg is already fully backed for current supply, so a switch can never leave KND under-collateralized.
+The genesis basket is set once by initialize from config (version 1, BasketVersionSet emitted). initialize reverts InvalidBasket if the legs are empty, any asset is zero or repeated, or any qtyPerUnit is zero. setBasket is deferred to P3 (ADR-012); when added it must check every new leg is already fully backed for current supply, so a switch can never leave KND under-collateralized.
+
+Pause model (ADR-011): pausing KandaToken stops every KND movement, including the burn inside redeem. The response to a reserve-asset depeg is pauseCreate on the vault, which leaves redeem open. A pause or blacklist on a reserve token itself (USDC or DGLD) makes every create and redeem revert, because both move every leg.
 
 ### 3.4 PaymentEscrow
 
@@ -175,22 +200,32 @@ interface IPaymentEscrow {
     error NotExpired(bytes32 intentId);
     error Unauthorized(address caller);
     error BadExpiry(uint64 expiry);
+    error InvalidExpiryBounds(uint64 minExpiry, uint64 maxExpiry);
+    error InvalidSplit(uint128 toReceiver, uint128 amount);
+    error SameParty(address account);
+    error ZeroAmount();
+
+    event ExpiryBoundsSet(uint64 minExpiry, uint64 maxExpiry);
 
     function lock(bytes32 intentId, address receiver, uint128 amount, uint64 expiry, bytes32 metadataHash) external;
     function release(bytes32 intentId) external;  // sender or RELEASER_ROLE, status Locked
     function reject(bytes32 intentId) external;   // receiver, status Locked, refunds sender now
     function refund(bytes32 intentId) external;   // anyone after expiry, status Locked
     function dispute(bytes32 intentId) external;  // sender or receiver, status Locked, before expiry
-    function resolve(bytes32 intentId, uint128 toReceiver) external; // ARBITER_ROLE, status Disputed
+    function resolve(bytes32 intentId, uint128 toReceiver) external; // ARBITER_ROLE, status Disputed, toReceiver <= amount (InvalidSplit)
+    function setExpiryBounds(uint64 minExpiry, uint64 maxExpiry) external; // LIMITS_ADMIN_ROLE (timelock)
+    function pause() external;    // PAUSER_ROLE
+    function unpause() external;  // UNPAUSER_ROLE
     function batchRelease(bytes32[] calldata ids) external; // P2
     function intents(bytes32 intentId) external view returns (Intent memory);
 }
 ```
 
 - intentId = keccak256 of the off-chain intent UUID and the chain id, computed by the backend; reuse reverts.
-- expiry must fall between now plus minExpiry (15 minutes) and now plus maxExpiry (24 hours); defaults set by timelock.
+- expiry must fall between now plus minExpiry (15 minutes) and now plus maxExpiry (24 hours); initial values from config, changed by setExpiryBounds through the timelock; InvalidExpiryBounds unless 0 < minExpiry <= maxExpiry.
 - metadataHash = keccak256 of the canonical JSON of the Travel Rule and invoice payload stored off-chain.
-- Sender and receiver must be active partners; neither may be blocked.
+- Sender and receiver must be active partners and must differ (SameParty); neither may be blocked; amount is non-zero (ZeroAmount).
+- While the escrow is paused, every state-changing function reverts (INV-7).
 
 ### 3.5 NAVOracle
 
@@ -247,13 +282,19 @@ Mints and burns against off-chain reserves. Two-step: Ops Safe requests, Treasur
 | minExpiry, maxExpiry | PaymentEscrow | Timelock | 15 min, 24 h |
 | maxStaleness | NAVOracle | Redeploy | feed heartbeat plus 10% |
 | maxDeviationBps | NAVOracle | Redeploy | 100 |
-| Legs | BasketVault | Timelock | USDC 700000 per 1e18 KND; gold token G scaled to its decimals |
+| Legs | BasketVault | Genesis (initializer); P3 reconstitution | USDC 700000 per 1e18 KND; DGLD G x 1e18 per 1e18 KND (18 decimals, 1 DGLD = 1 troy oz) |
 
-Gold token availability: confirm which gold token has reliable liquidity on Base (native, bridged PAXG, or an omnichain XAUT variant) before P1 contracts freeze. If none is adequate, keep the gold leg on Ethereum mainnet in a second vault and bridge KND, which changes this spec; decide in ADR-010.
+Gold token (ADR-010, accepted 27 Sep 2026): DGLD on Base, 0xe908475f8Beb7A138B0dc6eb5A05cb27068ffB9A, issued by Gold Token SA. Checked on-chain on 27 Sep 2026:
+
+- 18 decimals, behind an upgradeable proxy. The V3 transfer path charges no fee, but an upgrade could add one, so the vault keeps measuring balance deltas.
+- The issuer can pause all transfers, blacklist an address, and move a blacklisted address's balance to its recovery address. Monitoring alerts on these events for the vault (L7 section 5, R5).
+- No EIP-2612 permit: participants approve DGLD before createInKind.
+- 1 DGLD = 1 troy ounce, inferred from its price matching XAU/USD. Confirm in the issuer's terms (on-chain tcURL) before genesis; if the unit is a gram, qtyPerUnit is G x 31.1034768 x 1e18.
+- Liquidity: about 401 DGLD circulated on Base with about 1,100 holders. At the P1 cap, the gold leg needs about 70 DGLD. Confirm authorized participants' sourcing (issuer mint or bridge) and DEX pool depth before the zap parameters are set.
 
 ## 5. Invariant test suite
 
-Handler-based Foundry invariants in test/invariant/. The handler exposes: create, redeem, transfer, transferFrom, lock, release, reject, refund after time warp, dispute, resolve, pause, unpause, block, unblock, and a fee-on-transfer toggle on the mock gold token. Ghost variables track expected escrow balance and per-day consumption.
+Handler-based Foundry invariants in test/invariant/. The handler exposes: create, redeem, transfer, transferFrom, lock, release, reject, refund after time warp, dispute, resolve, pause and unpause on each contract, pauseCreate, unpauseCreate, block, unblock, and fee-on-transfer, pause and blacklist toggles on the mock gold token (modelled on DGLD). Ghost variables track expected escrow balance and per-day consumption.
 
 | Invariant | Assertion |
 | --- | --- |
@@ -263,7 +304,7 @@ Handler-based Foundry invariants in test/invariant/. The handler exposes: create
 | INV-4 | KND.balanceOf(escrow) equals the ghost sum of Locked and Disputed amounts |
 | INV-5 | Terminal intents never change (ghost snapshot) |
 | INV-6 | Consumed per day at most tier limit |
-| INV-7 | Handler calls while paused never change balances |
+| INV-7 | Handler calls blocked by any pause (token, vault, vault creation, escrow) never change balances |
 | INV-8 | Blocked accounts' balances never change |
 
 CI runs 256 runs on pull requests and 10,000 runs at depth 100 nightly.
@@ -299,17 +340,30 @@ Deploy.s.sol reads config/\<network>.json, deploys in this order and writes depl
   "chainId": 84532,
   "usdc": "0x...",
   "goldToken": "0x...",
+  "goldDecimals": 18,
   "goldFeedPrimary": "0x...",
   "goldFeedSecondary": "0x...",
   "sequencerFeed": "0x...",
   "safes": { "admin": "0x...", "ops": "0x...", "compliance": "0x...", "guardian": "0x...", "treasury": "0x..." },
+  "pauseBot": "0x...",
+  "releaser": "0x...",
+  "feeRecipient": "0x...",
   "timelockDelay": 300,
   "supplyCap": "1000000000000000000000000",
   "feeBps": 10,
   "usdQtyPerUnit": "700000",
-  "goldQtyPerUnit": "set at genesis"
+  "goldQtyPerUnit": "set at genesis",
+  "tiers": [
+    { "tier": 1, "dailyCreate": "50000000000000000000000", "dailyRedeem": "50000000000000000000000" },
+    { "tier": 2, "dailyCreate": "250000000000000000000000", "dailyRedeem": "250000000000000000000000" }
+  ],
+  "escrow": { "minExpiry": 900, "maxExpiry": 86400 },
+  "nav": { "maxStaleness": 95040, "maxDeviationBps": 100 },
+  "zap": { "routers": [] }
 }
 ```
+
+Deploy.s.sol aborts if goldDecimals differs from goldToken.decimals(). nav.maxStaleness is the feed heartbeat plus 10% (86,400 s for XAU/USD on Base).
 
 ## 8. Security checklist before audit
 

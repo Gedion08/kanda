@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Drizzle schema, migrations, ledger balance trigger, append-only grants. L3 s4, L4 s12.",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

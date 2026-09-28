@@ -57,11 +57,13 @@ Clients call Kanda services; services send transactions and read events; externa
 | UPGRADER\_ROLE | TimelockController | Upgrade UUPS proxies |
 | LIMITS\_ADMIN\_ROLE | TimelockController | Set supply cap, tier caps, fees, basket version |
 | MINTER\_ROLE on KND | BasketVault; in P2 also CCIP pool and CashDesk | Mint and burn |
-| PAUSER\_ROLE | Guardian Safe 2 of 4 and a pause-only monitoring bot key | Pause everything |
-| UNPAUSER\_ROLE | Admin Safe 3 of 5 | Unpause |
+| PAUSER\_ROLE | Guardian Safe 2 of 4 and a pause-only monitoring bot key | Pause KandaToken, BasketVault or PaymentEscrow; pause creation only on BasketVault |
+| UNPAUSER\_ROLE | Admin Safe 3 of 5 | Unpause, including creation on BasketVault |
 | COMPLIANCE\_ROLE | Compliance Safe 2 of 3 | Block and unblock addresses |
 | PARTICIPANT\_MANAGER\_ROLE | Ops Safe 2 of 3 | Add participants and set limits within tier caps |
 | ARBITER\_ROLE | Ops Safe 2 of 3 | Resolve disputed escrow intents |
+| RELEASER\_ROLE | Releaser MPC key with release-only policy (L7 section 2) | Release Locked escrow intents |
+| LIMITS\_CONSUMER\_ROLE | BasketVault; in P2 also CashDesk | Consume participants' daily create and redeem limits in ParticipantRegistry |
 | ORACLE\_ADMIN\_ROLE | TimelockController | Change feeds and thresholds |
 
 ### System invariants
@@ -74,7 +76,7 @@ These must hold after every transaction and are encoded as Foundry invariant tes
 - INV-4 PaymentEscrow's KND balance equals the sum of amounts in Locked and Disputed intents.
 - INV-5 A Released or Refunded intent never changes state again.
 - INV-6 No participant exceeds its daily create or redeem limit.
-- INV-7 While paused, no transfer, create, redeem, lock, release or refund succeeds.
+- INV-7 While KandaToken is paused, no transfer, create, redeem, lock, release or refund succeeds. While BasketVault is paused, no create or redeem succeeds; while only its creation is paused, no create succeeds and redeem continues. While PaymentEscrow is paused, none of its state-changing functions succeeds.
 - INV-8 A blocked address can neither send nor receive KND.
 
 ### Upgrade model
@@ -85,7 +87,7 @@ KND, BasketVault, ParticipantRegistry and PaymentEscrow are UUPS proxies. Upgrad
 
 ### Create and redeem in kind
 
-1. Participant approves USDC and PAXG to BasketVault (or uses permit).
+1. Participant approves USDC and DGLD to BasketVault (USDC also accepts permit; DGLD has no permit).
 2. Participant calls createInKind(amount, to). The vault computes each asset's quantity rounded up, pulls it, measures the balance delta to handle fee-on-transfer, applies the fee, checks caps and limits, and mints KND.
 3. Redeem burns KND first, then sends each asset's quantity rounded down, minus the fee.
 
@@ -132,7 +134,7 @@ S is the send amount, F are partner fixed fees, r\_A is Partner A's KES per KND 
 
 ## 8. Oracles and pricing
 
-- NAV: 0.70 + G times XAU/USD, from Chainlink XAU/USD or PAXG/USD on Base, with a secondary feed, a staleness limit and a maximum deviation between feeds. Used for display, zap bounds and pool bands.
+- NAV: 0.70 + G times XAU/USD, from Chainlink XAU/USD on Base (primary) and Chainlink PAXG/USD (secondary), with a staleness limit and a maximum deviation between feeds (ADR-010). Used for display, zap bounds and pool bands.
 - FX reference (P1 off-chain, P2 on-chain): median of partner quotes plus published official rates. Each corridor has a divergence threshold; a quote outside it is held, not auto-rejected, so the partner can explain parallel-market conditions.
 - Partners own their local rate; Kanda records which rate the partner declared (official or market) for regulator reporting.
 
@@ -199,7 +201,10 @@ OpenTelemetry traces across API, jobs and chain calls; metrics for quote latency
 | 007 | Ponder over The Graph for the operational indexer | Proposed |
 | 008 | BullMQ in P1, Temporal considered in P2 | Proposed |
 | 009 | MPC provider | Open |
-| 010 | PAXG, XAUT or both for the gold leg | Open |
+| 010 | DGLD as the Phase 1 gold leg on Base; Chainlink XAU/USD primary and PAXG/USD secondary gold feeds (details in L1 section 4, L2 section 2) | Accepted |
+| 011 | Pause model: KandaToken pause stops all KND movement; BasketVault and PaymentEscrow each have their own pause; BasketVault can pause creation alone so redeem stays open | Accepted |
+| 012 | setBasket deferred to P3; the P1 genesis basket is fixed in the BasketVault initializer | Accepted |
+| 013 | MIT licence for all code in the repository | Accepted |
 
 ## 16. Failure modes
 
@@ -208,7 +213,7 @@ OpenTelemetry traces across API, jobs and chain calls; metrics for quote latency
 | Gold feed stale | NAV display frozen | Banner, zap disabled; in-kind create and redeem unaffected |
 | Receiving partner offline | Intents stall | Expiry and permissionless refund; route to backup partner in P2 |
 | Base sequencer outage | No transactions | Stop quoting, queue intents, resume on recovery |
-| USDC depeg | Basket value drops | Pause create; redeem continues in kind so holders exit with the actual assets |
-| PAXG freezes the vault address | Gold leg stuck | Pause, legal escalation; P2 diversifies across two gold tokens |
+| USDC depeg | Basket value drops | pauseCreate on BasketVault, KandaToken left unpaused; redeem continues in kind so holders exit with the actual assets |
+| DGLD issuer pauses the token or blacklists the vault | Gold leg stuck: every create and redeem reverts because each moves every leg; a blacklisted vault's DGLD can be moved to the issuer's recovery address | Pause BasketVault, legal escalation with Gold Token SA; alert on DGLD Paused, Blacklisted, RecoveryFromBlacklistedAddress and Upgraded events; P2 diversifies across two gold tokens |
 | Kanda backend down | No new payments | Funds safe on-chain; escrow expiry refunds |
 | Indexer lag | Late notifications | No release before finality; reconciliation waits |

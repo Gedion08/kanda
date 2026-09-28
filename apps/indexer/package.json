@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Ponder indexer for KND, BasketVault, ParticipantRegistry, PaymentEscrow. L3 s6.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "lint": "eslint .",

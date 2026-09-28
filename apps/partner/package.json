@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Partner portal: inbox, lock, confirm payout, inventory, statements. L5 s4.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "lint": "eslint .",

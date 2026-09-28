@@ -2,6 +2,7 @@
   "name": "kanda",
   "private": true,
   "description": "Kanda monorepo: KND basket token, BasketVault, payment escrow and the partner settlement network. Specs in docs/.",
+  "license": "MIT",
   "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=22.13.0 <23"

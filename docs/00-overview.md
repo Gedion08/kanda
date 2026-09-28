@@ -15,7 +15,7 @@ One KND is a fixed basket: 0.70 US dollars plus G troy ounces of gold, where G i
 | # | Decision | Choice | Why | Revisit |
 | --- | --- | --- | --- | --- |
 | D1 | Unit of value | 1 KND = 0.70 USD + G oz gold, fixed quantities | No African government controls it; protects holders from local-currency depreciation; gold gives a non-dollar component | Phase 3 reconstitution |
-| D2 | Reserves in Phase 1 | 100% on-chain in a BasketVault holding USDC and PAXG | Anyone can verify backing from chain state; no bank custody needed for the MVP | Phase 2 adds T-bills and allocated gold off-chain, with attestation |
+| D2 | Reserves in Phase 1 | 100% on-chain in a BasketVault holding USDC and DGLD (ADR-010) | Anyone can verify backing from chain state; no bank custody needed for the MVP | Phase 2 adds T-bills and allocated gold off-chain, with attestation |
 | D3 | Primary market | In-kind create and redeem by allowlisted participants; no price oracle in the mint or burn path | Removes oracle manipulation from the most dangerous code path | Phase 2 adds cash create via issuer desk |
 | D4 | Secondary market | Freely transferable ERC-20 with a blocklist, not an allowlist | Tradability, DEX pools, wallet-to-wallet payments | Stays |
 | D5 | Local FX rates | Quoted by licensed local ramp partners; Kanda's FX oracle is reference-only and triggers holds on divergence | Kanda never has to choose between an official and a parallel rate | Phase 2 on-chain pools use oracle bands |

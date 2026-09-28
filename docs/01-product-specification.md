@@ -51,7 +51,7 @@ One KND is a claim on a fixed quantity basket, not a fixed USD value.
 ```
 
 - USD leg: 0.70 USD per KND, held as USDC in Phase 1 (0.70e6 base units at 6 decimals).
-- Gold leg: G troy ounces per KND, held as PAXG in Phase 1 (1 PAXG = 1 fine troy ounce, 18 decimals). Example only: at a genesis gold price of 4,000 USD per ounce, G = 0.000075 oz.
+- Gold leg: G troy ounces per KND, held as DGLD in Phase 1 (ADR-010): allocated, Swiss-vaulted PAMP gold issued by Gold Token SA (MKS PAMP group), 18 decimals, 1 DGLD = 1 fine troy ounce (confirm in the issuer's terms before genesis). Example only: at a genesis gold price of 4,000 USD per ounce, G = 0.000075 oz.
 - KND has 18 decimals. Basket quantities are immutable per basket version; a new version is a governance event.
 - Gold weight drifts with the gold price. If gold's share of NAV stays outside 20% to 40% for 30 consecutive days, governance must table a reconstitution proposal. Reconstitution sets new quantities so NAV is unchanged at the switch block.
 - Display: apps show KND balances in the user's local currency first, using the partner quote, with NAV in USD as secondary.
@@ -159,7 +159,7 @@ One KND is a claim on a fixed quantity basket, not a fixed USD value.
 | --- | --- | --- |
 | Regulator treats KND as capital flight | Corridor shut | Partner-led licensing, holding limits, B2B trade focus, early regulator engagement |
 | Gold drawdown lowers KND in USD terms | User losses, trust | Clear disclosure, 30% cap, local-currency display, reconstitution rules |
-| USDC or PAXG issuer failure or freeze | Reserve impairment | Diversify in P2 (T-bills, second gold token), monitoring, concentration limits |
+| USDC or DGLD issuer failure, freeze or seizure | Reserve impairment | Diversify in P2 (T-bills, second gold token), monitoring, concentration limits |
 | Smart contract bug | Loss of reserves | Two audits, invariant fuzzing, caps, pause, bug bounty |
 | Key compromise | Unauthorized mint or upgrade | Multisig, timelock, role separation, HSM or MPC for operational keys |
 | Partner fails to pay out | Customer loss | Escrow only releases on confirmation, partner collateral, SLA and offboarding |
@@ -171,9 +171,9 @@ One KND is a claim on a fixed quantity basket, not a fixed USD value.
 
 - [ ] Issuer jurisdiction and entity structure
 - [ ] Final basket split (70/30 proposed) and genesis date
-- [ ] Gold instrument for Phase 1: PAXG, XAUT, or both, and which has reliable liquidity on Base (native or bridged)
+- [x] Gold instrument for Phase 1: DGLD on Base (ADR-010, decided 27 Sep 2026)
 - [ ] Kenyan and Nigerian ramp partners (candidates: Pretium in Kenya; Yellow Card and Busha operate in Nigeria)
-- [ ] Chainlink XAU/USD or PAXG/USD feed availability on Base, and the fallback feed
+- [x] Gold feeds on Base: Chainlink XAU/USD primary, Chainlink PAXG/USD secondary (ADR-010)
 - [ ] Name, trademark and ticker clearance
 - [ ] Audit firms (two) and bug bounty platform
 

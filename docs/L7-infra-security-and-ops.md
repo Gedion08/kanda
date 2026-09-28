@@ -65,7 +65,7 @@ Repository rules: branch protection, required reviews, CODEOWNERS for contracts 
 | Large mint or redeem | Over 10% of supply in one hour | High | R1 |
 | Oracle down or degraded | NAVOracle health not Ok for 10 min | High | R3 |
 | Partner SLA breach | Intents past payout SLA | High | R4 |
-| Reserve asset depeg or freeze | USDC or gold token off peg by 1%, or freeze event touching vault | Critical | R5 |
+| Reserve asset depeg, freeze or seizure | USDC or DGLD off peg by 1%; Paused or Upgraded on USDC or DGLD; Blacklisted or RecoveryFromBlacklistedAddress naming the vault | Critical | R5 |
 | Sequencer down | Uptime feed down | High | R6 |
 | PII access anomaly | Unusual reads of compliance schema | Critical | R7 |
 | API error rate | Over 2% 5xx for 5 min | Medium | R8 |
@@ -80,7 +80,7 @@ Runbooks:
 - R2 Suspected key compromise: guardian pauses; cancel queued timelock operations from Admin Safe; rotate affected signer out; review all transactions from that key.
 - R3 Oracle failure: confirm zap disabled; widen or block quotes per L2; switch secondary feed through timelock if prolonged.
 - R4 Partner failure: stop routing to the partner; let intents expire and refund; contact backup partner; invoke partner collateral per agreement.
-- R5 Reserve asset depeg or freeze: pause create; keep redeem open unless unsafe; legal escalation with the issuer; public notice.
+- R5 Reserve asset depeg, freeze or seizure: call pauseCreate on BasketVault. Do not pause KandaToken, which would also stop redeem. Keep redeem open unless unsafe. If DGLD is paused or the vault is blacklisted, every create and redeem reverts until the issuer acts: pause BasketVault and escalate. Legal escalation with the issuer (Circle for USDC, Gold Token SA for DGLD); public notice.
 - R6 Sequencer outage: stop quotes; queue intents; resume after grace period.
 - R7 Data breach: contain, preserve evidence, notify regulators and data subjects within legal deadlines.
 - R8 API degradation: scale, roll back last deploy, fail over RPC.

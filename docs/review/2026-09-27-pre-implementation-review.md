@@ -1,6 +1,6 @@
 # Pre-implementation architecture review
 
-27 Sep 2026 · Scope: all 18 tabs in `docs/` plus `AGENTS.md` · Status: for decision
+27 Sep 2026 · Scope: all 18 tabs in `docs/` plus `AGENTS.md` · Status: partly decided, see section 8
 
 This review is not a spec. `AGENTS.md` says "never add a contract function, API endpoint, table or state not in the spec; propose a spec change instead". This file is that proposal list. Each item names the task it blocks, so work can start where the spec is already sound and wait where it is not.
 
@@ -122,7 +122,7 @@ Severity:
 | C-07 | H | **`metadataHash`** is defined twice. L1: canonical JSON of the Travel Rule and invoice payload. L4: the same plus a 32-byte salt. "Canonical JSON" is never specified. | Adopt L4's salted form plus RFC 8785 (JCS). Fix L1 to point to L4 section 4 (SCP-04). |
 | C-08 | M: T1.2 | **NAVOracle.** L1 says `maxStaleness` and `maxDeviationBps` change by "redeploy", while ADD gives `ORACLE_ADMIN_ROLE` "change feeds and thresholds" and L7 R3 says "switch secondary feed through timelock". It doesn't say where G and the USD leg come from (immutable, or read from `vault.legs()`). The state when both feeds are fresh but deviate beyond the bound is undefined: Ok needs agreement, and Degraded is defined as "one feed usable". | SCP-05. Recommendations: immutable config (redeploy, per L1); G read from `vault.legs()` so it can't drift after reconstitution; deviation breach means `Degraded` returning the primary. `navStrict` still reverts in that case, so the zap is protected either way. |
 | C-09 | M: T1.3 | **ZapRouter** is under-specified. The `swapData` format and the aggregator are unnamed. How the router allowlist is managed isn't stated, and the contract is non-upgradeable. It says "effective price vs navStrict" without a formula. The zap consumes its own registry limits, so one user can exhaust the shared daily limit for everyone. | Specify before T1.3. The limit-sharing is acceptable under the P1 caps but should be written down. |
-| C-10 | M | **`setBasket`** is in the P1 interface but its logic is P3 (T3.2). It adds audit surface now. There is also no way to recover the surplus of a retired leg (P3 reconstitution) or fee-on-transfer excess. | Ship the P1 vault without `setBasket` (genesis basket set in the initializer). Add it with the P3 upgrade and a surplus policy. |
+| C-10 | M | **`setBasket`** is in the P1 interface but its logic is P3 (T3.2). It adds audit surface now. There is also no way to recover the surplus of a retired leg (P3 reconstitution) or fee-on-transfer excess. | Ship the P1 vault without `setBasket` (genesis basket set in the initializer). Add it with the P3 upgrade and a surplus policy. **Decided: deferred (ADR-012).** |
 | C-11 | L | `coverage()` with `totalSupply == 0` divides by zero. | Return `type(uint256).max` and document it |
 | C-12 | L | Escrow exit paths: should release, reject and resolve re-check the registry? If they do, deactivating a partner traps funds. | Don't re-check the registry on exit paths. The token blocklist already freezes deliberately, which is the only intended trap. |
 | C-13 | L | `batchRelease` (P2) is in the P1 interface. | Leave it out of the P1 interface. Escrow is UUPS, so it can be added in P2. |
@@ -143,7 +143,7 @@ Implementation notes (no spec change needed):
 | O-01 | M: T1.10 | **Rounding.** "Round against the customer by at most one base unit" can't hold if each step of R = (S − F_A)/r_A · (1 − f_net) · r_B − F_B rounds separately. | Evaluate the formula as an exact bigint rational (numerator/denominator), round once at the end, and add a property test that the result is within one unit of the exact value. |
 | O-02 | L | **Side.** "r_A is Partner A's KES per KND (buy)": buy from whose side? | Name fields by who pays. `sendPerKnd` is the local units the customer pays per KND; `receivePerKnd` is the local units the beneficiary gets per KND. |
 | O-03 | L | **Quote validity.** Partner quotes are valid 60 s, but customer quotes are locked 10 min and "partners must honor". The partner carries about 9 minutes of FX risk. | Commercial term for the P0 partner agreement, not code |
-| O-04 | M | **Gold source.** The gold token and gold feed on Base are open (ADR-010). If there is no adequate gold token on Base, L1 says the vault moves to Ethereum mainnet, which restructures L1 and L3. | Treat it as the top P0 technical decision. P0 contracts are safe to build meanwhile: they use mocks and addresses come from config. |
+| O-04 | M | **Gold source.** The gold token and gold feed on Base are open (ADR-010). If there is no adequate gold token on Base, L1 says the vault moves to Ethereum mainnet, which restructures L1 and L3. | **Decided: DGLD with Chainlink XAU/USD primary and PAXG/USD secondary (ADR-010).** Consequences in section 8. |
 
 ### 3.3 Backend and ledger (L3)
 
@@ -176,7 +176,7 @@ Implementation notes (no spec change needed):
 | A-01 | H: T1.13, T1.14 | **Endpoints the apps need but L6 omits:** payment approval, reject and refund calldata, held-quote approval, beneficiary list, team and approval policy, every admin console endpoint, and indexer history for the transparency page. L5 forbids hand-written fetch, so without these the apps can't be built. | One OpenAPI document tagged `public`, `partner`, `business`, `admin`, with `admin` hidden from published docs. Record it as a spec decision. |
 | A-02 | L | The integrator auth model is undefined. | HMAC like partners, as a separate principal kind (see B-03) |
 | X-01 | B: T0.6 | **The config schema** (L1 section 7) lacks values Deploy needs: tier limits, min/max expiry, NAV staleness and deviation, pause-bot, releaser and fee-recipient addresses, zap router allowlist, gold decimals. | SCP-09. The scaffolded `config/*.json` holds only the specified fields. |
-| X-02 | L | No licence is chosen. The scaffold uses `SPDX-License-Identifier: UNLICENSED`. | Decide before contracts are verified on-chain (BUSL-1.1, MIT, or proprietary) |
+| X-02 | L | No licence was chosen. | **Decided: MIT (ADR-013).** |
 
 ## 4. Spec change proposals
 
@@ -332,11 +332,11 @@ flowchart BT
 
 | Decision | Blocks | My recommendation |
 | --- | --- | --- |
-| Approve SCP-01 to SCP-03 and SCP-09 | T0.3, T0.4, T0.6 | As written |
+| Approve SCP-01 to SCP-03 and SCP-09 | T0.3, T0.4, T0.6 | **Approved and applied** |
 | Approve SCP-04 to SCP-08 and SCP-10 | P1 backend (T1.1, T1.5 to T1.9) | As written; I can draft the tab edits |
-| Ship `setBasket` in P1, or defer to P3 (C-10) | T0.4 | Defer |
-| Code licence (X-02) | Source verification on Base Sepolia (T0.6) | BUSL-1.1 for contracts until audit, then decide |
-| ADR-010 gold token on Base, and the gold feed (O-04) | P1 contract freeze, not P0 | P0 decision; keep building on mocks |
+| Ship `setBasket` in P1, or defer to P3 (C-10) | T0.4 | **Deferred (ADR-012)** |
+| Code licence (X-02) | Source verification on Base Sepolia (T0.6) | **MIT (ADR-013)** |
+| ADR-010 gold token on Base, and the gold feed (O-04) | P1 contract freeze, not P0 | **DGLD; XAU/USD and PAXG/USD (ADR-010)** |
 | ADR-009 MPC provider | T1 submitter adapter only | Defer; the local signer covers dev |
 
 ## 7. Scaffold inventory (T0.1)
@@ -355,3 +355,29 @@ flowchart BT
   - CODEOWNERS: GitHub handles are unknown.
   - Slither and nightly invariant jobs: added with T0.2 and T0.5.
   - The initial commit.
+
+## 8. Decision log
+
+### 27 Sep 2026
+
+Decisions:
+
+- SCP-01, SCP-02, SCP-03 and SCP-09 were approved and applied to the spec: ADD section 4, INV-7, section 15 (ADRs 011 to 013) and section 16; L1 sections 3.1 to 3.4, 4, 5 and 7; L7 section 5 and R5.
+- The edited L1 interfaces compile under solc 0.8.28.
+- `setBasket` is deferred to P3 (ADR-012).
+- Licence: MIT (ADR-013). The LICENSE copyright holder is "The Kanda Authors" until the legal entity exists.
+- ADR-010 accepted: DGLD as the gold leg; Chainlink XAU/USD primary and PAXG/USD secondary. The addresses are in `contracts/config/base.json` and L2 section 2.
+
+Findings from verifying ADR-010 on-chain, all on Base mainnet on 27 Sep 2026:
+
+| ID | Sev | Finding | Handling |
+| --- | --- | --- | --- |
+| G-01 | H | **DGLD issuer powers.** The issuer can pause transfers, blacklist, and move a blacklisted holder's balance to its recovery address. That is a seizure path, stronger than a freeze. The token is also an upgradeable proxy. If the vault is blacklisted, INV-1 breaks visibly and redeem stops for every leg, including USDC, because redeem pays all legs. | Recorded in ADD section 16, L1 section 4 and L7 R5, with alerts on Paused, Blacklisted, RecoveryFromBlacklistedAddress and Upgraded. Commercial: seek a written acknowledgement from Gold Token SA of the vault's address and purpose. **Open question for P1:** should redeem pay the unaffected legs when a leg is frozen? Today's design (all legs or nothing) is simpler and keeps holders pro rata; changing it needs an ADR. |
+| G-02 | M | **Unit** inferred as 1 DGLD = 1 troy oz (DEX price $4,330 against XAU $4,285). | Confirm in the issuer's terms before genesis. The gram conversion is written into L1 section 4. |
+| G-03 | M | **Liquidity.** About 401 DGLD on Base (≈ $1.7M) across 1,097 holders; about 1,604 on Ethereum. The P1 cap needs about 70 DGLD, roughly 17% of Base supply. | Before T1.3 (ZapRouter), confirm how authorized participants source DGLD (issuer mint on Base, or a bridge; the mechanism is unconfirmed) and measure DGLD pool depth. |
+| G-04 | M | **Premium.** DGLD traded about 1% above XAU/USD; PAXG/USD was 0.2% below XAU. | NAV prices gold at spot. ZapRouter's maxPremiumBps must cover about 0.3% (a 1% premium on a 30% leg), plus the swap cost. |
+| G-05 | L | **Weekends.** XAU/USD follows precious-metals market hours but still posted a heartbeat update on Sunday. NAV stays Ok but holds its Friday price. | Acceptable: no price gates mint or burn. Noted in L2 section 2. |
+| G-06 | L | **No permit.** DGLD has no EIP-2612 permit. | ADD section 5 updated: participants approve DGLD before createInKind. |
+
+Still open: SCP-04 to SCP-08 and SCP-10. None of them blocks P0.
+

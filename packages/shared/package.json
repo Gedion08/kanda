@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Types, stable error codes, money and decimal helpers (bigint only). L3 s1, L6 s1, L6 s7.",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

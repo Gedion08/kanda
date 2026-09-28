@@ -23,7 +23,7 @@ P0 turns Kanda from an idea into a licensable, partner-backed project with KND a
 | Partners | Partner requirements doc (licences, API, SLAs, collateral) | Sent to candidates | L6 |
 | Partners | Signed LOIs, one Kenyan and one Nigerian ramp | Both signed | PSD section 13 |
 | Basket | Basket spec v1: split, G formula, genesis procedure, reconstitution rule | Signed off | PSD section 5, L1 |
-| Basket | Gold instrument decision (PAXG, XAUT or both) | ADR-010 accepted | L1 |
+| Basket | Gold instrument decision: DGLD chosen 27 Sep 2026 | ADR-010 accepted | L1 |
 | Tech | Monorepo, CI, linting, contract test harness | Green pipeline on main | Build Playbook |
 | Tech | KND, BasketVault, ParticipantRegistry on Base Sepolia | Deployed, verified, invariant suite green | L1 |
 | Tech | Transparency prototype reading vault and supply | Public URL on testnet | L5 |
@@ -36,7 +36,7 @@ P0 turns Kanda from an idea into a licensable, partner-backed project with KND a
 1. Scaffold the monorepo exactly as the Build Playbook describes; set up Foundry, pnpm, Turborepo, CI.
 2. Implement KND token with its full test file before anything else depends on it.
 3. Implement ParticipantRegistry, then BasketVault, then the handler-based invariant suite for INV-1, INV-2, INV-3, INV-6, INV-7, INV-8.
-4. Write deploy scripts with a parameters file per environment; deploy to Base Sepolia with mock USDC and mock PAXG (18-decimal token with optional transfer fee to test fee-on-transfer handling).
+4. Write deploy scripts with a parameters file per environment; deploy to Base Sepolia with mock USDC and a mock gold token modelled on DGLD (18 decimals, with optional transfer fee, pause and blacklist toggles).
 5. Wire roles to test Safes and a TimelockController with a 5-minute delay on testnet.
 6. Build the transparency prototype that reads supply, vault balances and basket quantities.
 7. Run an internal review against the L1 checklist; book two audit slots for P1.
@@ -58,7 +58,7 @@ P0 turns Kanda from an idea into a licensable, partner-backed project with KND a
 | --- | --- |
 | Counsel says KND is a regulated e-money or asset-referenced token requiring a licence you cannot get quickly | Pick the jurisdiction with the clearest path; consider partnering with a licensed issuer as issuer of record |
 | No partner signs | Start with partners you already talk to (for example Pretium in Kenya); offer revenue share on network fees |
-| Gold feed not available on Base | Use PAXG/USD feed, a Pyth feed, or Kanda-signed feed limited to display use |
+| Gold feed not available on Base | Resolved: Chainlink XAU/USD and PAXG/USD are live on Base (ADR-010) |
 
 ## Agent task pack
 

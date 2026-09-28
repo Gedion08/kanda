@@ -6,7 +6,7 @@ Kanda needs three prices: KND's NAV in USD, a reference rate for each local curr
 
 | Price | Used for | Source | Update | If it fails |
 | --- | --- | --- | --- | --- |
-| Gold in USD | NAV | Chainlink XAU/USD or PAXG/USD on Base, secondary feed | Feed heartbeat | NAV Degraded or Down; zap off; in-kind unaffected |
+| Gold in USD | NAV | Chainlink XAU/USD on Base (primary), Chainlink PAXG/USD (secondary) | Feed heartbeat | NAV Degraded or Down; zap off; in-kind unaffected |
 | NAV (USD per KND) | Display, zap bound, pool bands, quotes | NAVOracle and NAV service | Every block on-chain, every minute off-chain | Banner in apps; quotes switch to partner-only pricing with wider hold threshold |
 | Local currency per USD, reference | Quote checks, monitoring, regulator reports | Partner quotes, central bank official rate, market indicators | Minutes to daily | Corridor paused for new quotes if no source is fresh |
 | Partner rate (local per KND) | Customer quotes | Partner quote endpoint, signed | Per request, valid up to 60 s | Quote fails with a retryable error |
@@ -18,7 +18,17 @@ Kanda needs three prices: KND's NAV in USD, a reference rate for each local curr
 - On-chain: NAVOracle per L1 section 3.5, including the L2 sequencer uptime check.
 - Off-chain NAV service reads the same feeds through viem, recomputes NAV, and stores a NAVSnapshot every minute: navUsd, goldPrice, feedRoundIds, health.
 - Cross-check: compare against an independent spot source; alert if the gap exceeds 50 bps for 5 minutes.
-- Confirm feed availability and addresses on Base in P0 (open decision). If only a PAXG/USD feed exists, record that PAXG can trade slightly away from spot gold and treat 50 bps as the tolerance.
+- Feeds (ADR-010, checked on Base mainnet on 27 Sep 2026). Both have 8 decimals, a 24-hour heartbeat and a 0.5% deviation threshold.
+
+  | Role | Feed | Proxy | Hours |
+  | --- | --- | --- | --- |
+  | Primary | XAU/USD | 0x5213eBB69743b85644dbB6E25cdF994aFBb8cF31 | Precious-metals market hours |
+  | Secondary | PAXG/USD | 0xd49c546D32D5472a7F7704EC183128512a1B2fcb | 24/7 |
+  | Sequencer uptime | L2 sequencer | 0xBCF85224fc0756B9Fa45aA7892530B47e10b6433 | |
+
+- XAU/USD keeps its last price over market closures, and heartbeat updates keep it within maxStaleness. NAV therefore stays Ok but frozen over a weekend while DGLD and PAXG keep trading. This is acceptable because no price gates mint or burn.
+- PAXG can trade slightly away from spot gold: treat 50 bps as the cross-check tolerance.
+- DGLD traded about 1% above XAU/USD when checked. NAV uses spot, so ZapRouter's maxPremiumBps must allow for the gold-leg premium weighted at about 30%.
 
 ## 3. FX reference
 

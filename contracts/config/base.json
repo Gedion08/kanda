@@ -1,10 +1,11 @@
 {
   "chainId": 8453,
-  "usdc": "0x0000000000000000000000000000000000000000",
-  "goldToken": "0x0000000000000000000000000000000000000000",
-  "goldFeedPrimary": "0x0000000000000000000000000000000000000000",
-  "goldFeedSecondary": "0x0000000000000000000000000000000000000000",
-  "sequencerFeed": "0x0000000000000000000000000000000000000000",
+  "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "goldToken": "0xe908475f8Beb7A138B0dc6eb5A05cb27068ffB9A",
+  "goldDecimals": 18,
+  "goldFeedPrimary": "0x5213eBB69743b85644dbB6E25cdF994aFBb8cF31",
+  "goldFeedSecondary": "0xd49c546D32D5472a7F7704EC183128512a1B2fcb",
+  "sequencerFeed": "0xBCF85224fc0756B9Fa45aA7892530B47e10b6433",
   "safes": {
     "admin": "0x0000000000000000000000000000000000000000",
     "ops": "0x0000000000000000000000000000000000000000",
@@ -12,9 +13,35 @@
     "guardian": "0x0000000000000000000000000000000000000000",
     "treasury": "0x0000000000000000000000000000000000000000"
   },
+  "pauseBot": "0x0000000000000000000000000000000000000000",
+  "releaser": "0x0000000000000000000000000000000000000000",
+  "feeRecipient": "0x0000000000000000000000000000000000000000",
   "timelockDelay": 172800,
   "supplyCap": "1000000000000000000000000",
   "feeBps": 10,
   "usdQtyPerUnit": "700000",
-  "goldQtyPerUnit": "0"
+  "goldQtyPerUnit": "0",
+  "tiers": [
+    {
+      "tier": 1,
+      "dailyCreate": "50000000000000000000000",
+      "dailyRedeem": "50000000000000000000000"
+    },
+    {
+      "tier": 2,
+      "dailyCreate": "250000000000000000000000",
+      "dailyRedeem": "250000000000000000000000"
+    }
+  ],
+  "escrow": {
+    "minExpiry": 900,
+    "maxExpiry": 86400
+  },
+  "nav": {
+    "maxStaleness": 95040,
+    "maxDeviationBps": 100
+  },
+  "zap": {
+    "routers": []
+  }
 }
