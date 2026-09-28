@@ -282,7 +282,7 @@ Also:
 - State the rules the tests pin down. `blockAccount(address(0))` reverts `ZeroAddress`, because blocking zero would stop every mint and burn. `initialize(address admin)` grants only `DEFAULT_ADMIN_ROLE` and reverts `ZeroAddress` on zero. The name is `Kanda` (also the EIP-712 domain name, version `1`), the symbol `KND`. `approve` and `permit` still work while paused or blocked; only balance moves stop.
 - Open for P2: Chainlink's `IBurnMintERC20` also declares `burn(address account, uint256 amount)`, which is not in `IKandaToken`. `BurnMintTokenPool` only calls `burn(uint256)`, so P1 is unaffected. Decide before the CCIP pool is chosen whether to add it or to use that pool type only.
 
-**SCP-12: BasketVault details** (L1 section 3.3). Found while implementing T0.4 on 28 Sep 2026. Proposed; the code follows it.
+**SCP-12: BasketVault details** (L1 section 3.3). Found while implementing T0.4 on 28 Sep 2026. Approved and applied on 28 Sep 2026 (section 8).
 
 - `initialize(admin, knd, registry, legs, supplyCap, feeBps, feeRecipient)`. It sets the genesis basket, the cap and the fee from the network config in one step and emits `BasketVersionSet(1, legs)`, `SupplyCapSet` and `FeeSet`. The deployer then needs no temporary LIMITS_ADMIN_ROLE. It grants only DEFAULT_ADMIN_ROLE and reverts `ZeroAddress` for a zero admin, token, registry or fee recipient.
 - `coverage()` returns `type(uint256).max` per leg while supply is zero (C-11). The redeem fee rounds up, like the create fee (C-14).
@@ -403,4 +403,5 @@ Decisions:
 
 - SCP-11 was approved and applied to the spec: L1 section 3.1 (the EIP-3009 events and errors, and the initialize, blocklist, spender and signature rules) and L1 section 3.9 (remote chains use `BurnMintTokenPool`, so no `burn(address,uint256)` is added).
 - T0.2 KandaToken implemented against it.
+- SCP-12 was approved and applied to L1 section 3.3: the initialize signature and genesis events, coverage() at zero supply, redeem fee rounding up, the reused AccountBlocked and NotActive errors, setFee's non-zero recipient, idempotent create pause, and the redeem check-then-pay order. T0.4 BasketVault implemented against it.
 
