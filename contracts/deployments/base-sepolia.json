@@ -1,0 +1,12 @@
+{
+  "basketVault": "0xd28b639C40bb0cbA4ce98684915cb8dEcEb81db3",
+  "basketVaultImplementation": "0xBffBA024C36680a827125a90a6a90B5f19a18B8E",
+  "chainId": 84532,
+  "deployer": "0x164e31F960ab37369e5b17Ed0faDA994E71AEE5c",
+  "kandaToken": "0x10E0caD60b43b1919238918CF00F06ebBfE118cf",
+  "kandaTokenImplementation": "0x7a54dE17441455Dc2c515B929871EDF8d016EbB3",
+  "participantRegistry": "0xD9289B314C25a5C28409FA5f5C51e7Cbe58d5b42",
+  "participantRegistryImplementation": "0xeFe87b54Fc6D2C9484fD00f21BeB8714ea3a51d6",
+  "startBlock": 47426610,
+  "timelock": "0xC0C377Eb76d12F5C432A1C7F126ab119407168b2"
+}
