@@ -1,5 +1,7 @@
 # Kanda brand assets
 
+**Status: Internal.** Not for public use until the name clears and counsel has reviewed the token texts. The release steps are in `docs/review/p0-exit-gate.md` section 4.
+
 The full brand book is the Kanda brand system: https://claude.ai/artifact/AyDi16xpft6YtNu32Rr5L5. It covers voice, words to use and avoid, colour and type tokens, logo rules, and the token profile texts for explorers and token lists. This folder holds the source files for the logo.
 
 | File | Use |
