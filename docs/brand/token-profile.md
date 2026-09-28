@@ -1,5 +1,7 @@
 # KND token profile
 
+**Status: Internal.** Not for public use until the name clears and counsel has reviewed the token texts. The release steps are in `docs/review/p0-exit-gate.md` section 4.
+
 Ready-to-paste text for wherever KND is listed. It matches the contract (`KandaToken`, L1 section 3.1) and the product spec. Change it only when the spec changes, and update the brand system (https://claude.ai/artifact/AyDi16xpft6YtNu32Rr5L5) at the same time.
 
 ## Identity
