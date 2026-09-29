@@ -17,7 +17,7 @@ P0 closes only when every row below is done. The code rows move with the task pa
 | 3 | Two signed partner LOIs with indicative pricing (one Kenyan, one Nigerian ramp) | Not recorded | |
 | 4 | Basket spec v1 and ADR-010 accepted | Partly done: ADR-010 accepted 27 Sep 2026. Open: confirm 1 DGLD = 1 troy oz in the issuer's terms (G-02); G is fixed at genesis | Review doc section 8 |
 | 5 | Testnet contracts deployed and verified; invariant suite green at 10,000 runs, depth 100 | In progress: T0.2 to T0.4 contracts built and tested (slither pending). T0.5 invariant suite (INV-1, 2, 3, 6, 7, 8) green at 10,000 runs, depth 100, locally; nightly CI job added. T0.6 deployed to Base Sepolia on 28 Sep 2026: contracts verified, 5-minute timelock, roles wired to 1-of-1 test Safes and VerifyRoles green (addresses in contracts/README.md). Test Safes still need real signers. T0.7 transparency page built (apps/transparency), reading Base Sepolia directly; not hosted publicly until the name clears (section 4) | This repo |
-| 6 | Threat model reviewed; key ceremony plan written | Not started. The key ceremony outline is in L7 section 2; the external auditor review is still to come | |
+| 6 | Threat model reviewed; key ceremony plan written | Drafted 29 Sep 2026: `docs/security/threat-model.md` (v1) and `docs/security/key-ceremony.md`. Waiting for the external auditor review. | This repo |
 | 7 | Two audit firms booked for P1 | Not recorded | |
 | 8 | Name cleared ("Kanda", "KND") | Not started | See section 3 |
 
@@ -48,7 +48,7 @@ P0 closes only when every row below is done. The code rows move with the task pa
   - a fresh deployer key, then WireRoles and VerifyRoles
   - publishing the role report
 - **Done when** an external auditor has reviewed both.
-- These two are engineering documents, so I can draft them in the repo when you ask.
+- Drafts: `docs/security/threat-model.md` and `docs/security/key-ceremony.md`. Send both to one of the audit firms for review.
 
 ### Audit firms (row 7)
 
