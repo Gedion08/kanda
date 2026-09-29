@@ -11,10 +11,12 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "gen:abis": "node scripts/gen-abis.mjs"
   },
   "dependencies": {
-    "@kanda/shared": "workspace:*"
+    "@kanda/shared": "workspace:*",
+    "viem": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

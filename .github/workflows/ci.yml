@@ -1,5 +1,6 @@
 # T0.1 CI: forge fmt check, forge test, pnpm lint, pnpm typecheck (P0 task pack).
-# Slither, invariant nightly, gas snapshot and storage-layout diff are added as contracts land (L7 section 3).
+# Nightly 10,000-run invariants: invariants-nightly.yml. Slither, gas snapshot and storage-layout diff are added as
+# contracts land (L7 section 3).
 name: ci
 
 on:

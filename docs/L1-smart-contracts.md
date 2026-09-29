@@ -159,11 +159,11 @@ interface IBasketVault {
     function previewCreate(uint256 kndAmount) external view returns (uint256[] memory amountsIn, uint256 kndOutNet);
     function previewRedeem(uint256 kndAmount) external view returns (uint256[] memory amountsOut);
     function legs() external view returns (uint32 version, Leg[] memory);
-    function coverage() external view returns (uint256[] memory ratiosBps); // per leg, 10000 = 100%
+    function coverage() external view returns (uint256[] memory ratiosBps); // per leg, 10000 = 100%; type(uint256).max while supply is 0
     function createPaused() external view returns (bool);
 
     function setSupplyCap(uint256 cap) external;                 // LIMITS_ADMIN_ROLE
-    function setFee(uint16 feeBps, address recipient) external;  // LIMITS_ADMIN_ROLE, feeBps <= 100 (FeeTooHigh)
+    function setFee(uint16 feeBps, address recipient) external;  // LIMITS_ADMIN_ROLE, feeBps <= 100 (FeeTooHigh), recipient non-zero (ZeroAddress)
     function pause() external;          // PAUSER_ROLE: stops create and redeem
     function unpause() external;        // UNPAUSER_ROLE
     function pauseCreate() external;    // PAUSER_ROLE: stops create only; redeem continues
@@ -174,7 +174,7 @@ interface IBasketVault {
 
 createInKind, in order:
 
-1. Require the vault not paused and creation not paused (CreationPaused); kndAmount non-zero (ZeroAmount); to non-zero (ZeroAddress) and not blocked; caller is an active participant.
+1. Require the vault not paused and creation not paused (CreationPaused); kndAmount non-zero (ZeroAmount); to non-zero (ZeroAddress) and not blocked (IKandaToken.AccountBlocked); caller is an active participant (IParticipantRegistry.NotActive).
 2. For each leg compute required = mulDiv(kndAmount, qtyPerUnit, 1e18, Ceil); pull it with safeTransferFrom; record received as the balance delta.
 3. kndGross = minimum over legs of mulDiv(received, 1e18, qtyPerUnit, Floor), capped at kndAmount. This handles fee-on-transfer gold tokens: the scarcest leg decides; any excess stays as surplus backing.
 4. Check totalSupply + kndGross against the supply cap; call registry.consumeCreate.
@@ -182,11 +182,11 @@ createInKind, in order:
 
 redeemInKind, in order:
 
-1. Require the vault not paused (a creation pause does not apply); kndAmount non-zero; to non-zero; minAmountsOut has one entry per leg (LengthMismatch); caller is an active participant; call registry.consumeRedeem.
-2. Pull kndAmount from caller; fee in KND goes to fee recipient; burn the rest (net).
-3. For each leg pay mulDiv(net, qtyPerUnit, 1e18, Floor); check against minAmountsOut; transfer to to.
+1. Require the vault not paused (a creation pause does not apply); kndAmount non-zero; to non-zero; minAmountsOut has one entry per leg (LengthMismatch); caller is an active participant (IParticipantRegistry.NotActive); call registry.consumeRedeem.
+2. Pull kndAmount from caller; fee = mulDiv(kndAmount, feeBps, 10000, Ceil) in KND goes to fee recipient; burn the rest (net).
+3. For each leg pay mulDiv(net, qtyPerUnit, 1e18, Floor); check against minAmountsOut; transfer to to. All payouts are computed and every minimum checked before any token moves; a leg whose payout rounds to zero is skipped, because some tokens revert on zero transfers.
 
-The genesis basket is set once by initialize from config (version 1, BasketVersionSet emitted). initialize reverts InvalidBasket if the legs are empty, any asset is zero or repeated, or any qtyPerUnit is zero. setBasket is deferred to P3 (ADR-012); when added it must check every new leg is already fully backed for current supply, so a switch can never leave KND under-collateralized.
+initialize(admin, knd, registry, legs, supplyCap, feeBps, feeRecipient) sets the genesis basket, the supply cap and the fee from config in one step, so the deployer needs no temporary LIMITS\_ADMIN\_ROLE. It emits BasketVersionSet (version 1), SupplyCapSet and FeeSet, grants only DEFAULT\_ADMIN\_ROLE, and reverts ZeroAddress for a zero admin, token, registry or fee recipient. setFee also rejects a zero recipient when feeBps is 0. pauseCreate and unpauseCreate are idempotent and emit on every call. BasketNotBacked is reserved for setBasket and unused in P1. initialize reverts InvalidBasket if the legs are empty, any asset is zero or repeated, or any qtyPerUnit is zero. setBasket is deferred to P3 (ADR-012); when added it must check every new leg is already fully backed for current supply, so a switch can never leave KND under-collateralized.
 
 Pause model (ADR-011): pausing KandaToken stops every KND movement, including the burn inside redeem. The response to a reserve-asset depeg is pauseCreate on the vault, which leaves redeem open. A pause or blacklist on a reserve token itself (USDC or DGLD) makes every create and redeem revert, because both move every leg.
 

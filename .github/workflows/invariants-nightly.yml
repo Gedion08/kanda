@@ -1,0 +1,29 @@
+# Nightly invariant run at 10,000 runs, depth 100 (L1 section 5, L7 section 3; P0 exit gate).
+# Pull requests run the same suite at 256 runs inside ci.yml.
+name: invariants-nightly
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  invariants:
+    name: invariants (10,000 runs)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.8.3
+      - run: forge soldeer install
+      - run: forge test --match-path 'test/invariant/*' -vvv
+        env:
+          FOUNDRY_PROFILE: ci

@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+@import '@kanda/ui/theme.css';
+
+@source '../../../packages/ui/src';
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-reserve: var(--reserve);
+  --color-reserve-soft: var(--reserve-soft);
+  --color-on-reserve: var(--on-reserve);
+  --color-bullion: var(--bullion);
+  --color-bullion-ink: var(--bullion-ink);
+  --color-bullion-soft: var(--bullion-soft);
+  --color-settled: var(--settled);
+  --color-caution: var(--caution);
+  --color-danger: var(--danger);
+  --font-sans: var(--kanda-font-sans);
+  --font-mono: var(--kanda-font-mono);
+}
+
+@layer base {
+  body {
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--kanda-font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}

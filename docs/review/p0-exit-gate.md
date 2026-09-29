@@ -16,7 +16,7 @@ P0 closes only when every row below is done. The code rows move with the task pa
 | 2 | Written classification opinion: issuer country, Kenya, Nigeria | Not recorded | |
 | 3 | Two signed partner LOIs with indicative pricing (one Kenyan, one Nigerian ramp) | Not recorded | |
 | 4 | Basket spec v1 and ADR-010 accepted | Partly done: ADR-010 accepted 27 Sep 2026. Open: confirm 1 DGLD = 1 troy oz in the issuer's terms (G-02); G is fixed at genesis | Review doc section 8 |
-| 5 | Testnet contracts deployed and verified; invariant suite green at 10,000 runs, depth 100 | In progress: T0.2 KandaToken and T0.3 ParticipantRegistry built and tested (slither pending). T0.4 to T0.7 to do | This repo |
+| 5 | Testnet contracts deployed and verified; invariant suite green at 10,000 runs, depth 100 | In progress: T0.2 to T0.4 contracts built and tested (slither pending). T0.5 invariant suite (INV-1, 2, 3, 6, 7, 8) green at 10,000 runs, depth 100, locally; nightly CI job added. T0.6 deployed to Base Sepolia on 28 Sep 2026: contracts verified, 5-minute timelock, roles wired to 1-of-1 test Safes and VerifyRoles green (addresses in contracts/README.md). Test Safes still need real signers. T0.7 transparency page built (apps/transparency), reading Base Sepolia directly; not hosted publicly until the name clears (section 4) | This repo |
 | 6 | Threat model reviewed; key ceremony plan written | Not started. The key ceremony outline is in L7 section 2; the external auditor review is still to come | |
 | 7 | Two audit firms booked for P1 | Not recorded | |
 | 8 | Name cleared ("Kanda", "KND") | Not started | See section 3 |
@@ -58,11 +58,9 @@ P0 closes only when every row below is done. The code rows move with the task pa
 
 ## 2. Contract rows still to do
 
-- T0.4 BasketVault
-- T0.5 invariant suite (INV-1, 2, 3, 6, 7, 8)
-- T0.6 deploy and verify on Base Sepolia, and wire roles to test Safes with a 5-minute timelock
-- T0.7 transparency page
-- Slither on every contract. The owner runs it in the VS Code extension. Still to check: KandaToken, ParticipantRegistry.
+- Add real signers to the five test Safes and raise their thresholds (contracts/README.md, testnet caveats)
+- Host the transparency page publicly once the brand release gate (section 4) is met
+- Slither on every contract. The owner runs it in the VS Code extension. Still to check: KandaToken, ParticipantRegistry, BasketVault.
 
 ## 3. Name clearance ("Kanda" and "KND")
 
