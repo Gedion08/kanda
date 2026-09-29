@@ -291,6 +291,18 @@ Also:
 - Redeem computes every leg's payout and checks all minimums before it moves any token. A leg whose payout rounds to zero is skipped, because some tokens revert on zero transfers. The end state matches the spec's step order.
 - `BasketNotBacked` stays in the interface but is unused in P1; it is reserved for `setBasket` (P3, ADR-012).
 
+**SCP-13: PaymentEscrow details** (L1 section 3.4). Found while implementing T1.1 on 29 Sep 2026. Proposed; the code follows it.
+
+- `batchRelease` is not in the P1 interface (C-13). The escrow is UUPS, so P2 adds it with its own tests.
+- `initialize(admin, knd, registry, minExpiry, maxExpiry)` takes the window from config `escrow.minExpiry` and `escrow.maxExpiry`, and emits `ExpiryBoundsSet`. It grants only DEFAULT_ADMIN_ROLE. It reverts `ZeroAddress` (added to `IPaymentEscrow`) for a zero admin, token or registry.
+- Boundaries: `lock` accepts `now + minExpiry <= expiry <= now + maxExpiry`. `dispute` works while `now < expiry`. `refund` works from `now >= expiry`. No second is in both windows or in neither.
+- `reject` emits `Refunded(intentId, receiver)`; there is no separate event.
+- Error reuse, as in SCP-12: a sender or receiver that isn't an active partner reverts `IParticipantRegistry.NotActive`; a blocked receiver reverts `IKandaToken.AccountBlocked` before any KND moves. A blocked sender fails in the token transfer.
+- Check order on every intent call: status first (`BadStatus`), then the caller (`Unauthorized`), then time (`NotExpired`, `BadExpiry`).
+- Exit paths (`release`, `reject`, `refund`, `resolve`) don't re-check the registry (C-12). The token blocklist is the only intended trap.
+- "While paused, every state-changing function reverts" (INV-7) applies to the six intent functions. `setExpiryBounds`, role changes and upgrades still work, so the timelock can act during an incident.
+- `resolve` skips a zero-amount transfer, so a 100/0 split doesn't send zero tokens.
+
 ## 5. Implementation strategy
 
 **Order.** Follow the phase task packs strictly:

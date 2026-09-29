@@ -13,6 +13,7 @@ export const SOURCES = {
   kandaTokenAbi: ['KandaToken.sol', 'KandaToken'],
   participantRegistryAbi: ['ParticipantRegistry.sol', 'ParticipantRegistry'],
   basketVaultAbi: ['BasketVault.sol', 'BasketVault'],
+  paymentEscrowAbi: ['PaymentEscrow.sol', 'PaymentEscrow'],
   timelockControllerAbi: ['TimelockController.sol', 'TimelockController'],
   erc20MetadataAbi: ['IERC20Metadata.sol', 'IERC20Metadata'],
 };
