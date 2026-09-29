@@ -1,6 +1,6 @@
 /**
- * @kanda/ui: Shared React components: MoneyText, StatusTimeline, TxLink, CountdownBadge, theme. L5 s2.
- *
- * Scaffold placeholder (T0.1). Implementation starts at the task named in docs/ for this module.
+ * @kanda/ui: Shared React components and the brand theme. L5 s2. StatusTimeline and CountdownBadge arrive with
+ * the P1 apps that use them.
  */
-export {};
+export { AddressLink, truncateMiddle, type AddressLinkProps } from './AddressLink.js';
+export { MoneyText, type MoneyTextProps } from './MoneyText.js';

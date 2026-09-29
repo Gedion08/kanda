@@ -1,0 +1,48 @@
+/*
+ * Kanda theme tokens, from the brand system (docs/brand/README.md; tokens.json in the brand system artifact).
+ * Every text pair meets WCAG 4.5:1 in both themes; line-strong meets 3:1 for control borders.
+ * Load Manrope (400, 500, 700, 800) and IBM Plex Mono (400, 500) from Google Fonts in the app.
+ */
+:root {
+  color-scheme: light;
+  --surface: #f4f6f2;
+  --surface-raised: #ffffff;
+  --line: #d5ddd7;
+  --line-strong: #788a82;
+  --ink: #0e1a15;
+  --ink-muted: #4b5c54;
+  --reserve: #0f3d2e;
+  --reserve-soft: #dde9e2;
+  --on-reserve: #f4f6f2;
+  --bullion: #d4a437;
+  --bullion-ink: #7a5a0e;
+  --bullion-soft: #f6ebcd;
+  --settled: #1c5fa6;
+  --caution: #a85a06;
+  --danger: #b42318;
+  --focus: #1c5fa6;
+  --kanda-font-sans: Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --kanda-font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --surface: #0a1310;
+    --surface-raised: #121e19;
+    --line: #2a3a33;
+    --line-strong: #5f736a;
+    --ink: #e6eee9;
+    --ink-muted: #9cb0a6;
+    --reserve: #6fc39e;
+    --reserve-soft: #16302a;
+    --on-reserve: #06110d;
+    --bullion: #e2b64e;
+    --bullion-ink: #e2b64e;
+    --bullion-soft: #2e2510;
+    --settled: #7fb2ec;
+    --caution: #f0a04b;
+    --danger: #f2877d;
+    --focus: #7fb2ec;
+  }
+}
